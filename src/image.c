@@ -239,6 +239,19 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
 {
     int i,j;
 
+    /*
+     * when producing the output image, output the prediction as a text file
+     * Print the output class, confidence and the bounding box coordinate
+     * Prediction: <class>   <confidence>  Location: <Left> <Right> <Top> <Bottom> 
+     */
+    FILE *out_fd = fopen("prediction_details.txt", "w");
+
+    if (out_fd == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+
     for(i = 0; i < num; ++i){
         char labelstr[4096] = {0};
         int class = -1;
@@ -283,6 +296,8 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             int top   = (b.y-b.h/2.)*im.h;
             int bot   = (b.y+b.h/2.)*im.h;
 
+            fprintf(out_fd, "Prediction: %-30s %3.0f%% Location: %5d %5d %5d %5d\n", names[class], prob*100, left, right, top, bot);
+
             if(left < 0) left = 0;
             if(right > im.w-1) right = im.w-1;
             if(top < 0) top = 0;
@@ -305,6 +320,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             }
         }
     }
+    fclose(out_fd);
 }
 
 void transpose_image(image im)
@@ -543,17 +559,24 @@ void show_image_cv(image p, const char *name, IplImage *disp)
 
 void show_image(image p, const char *name)
 {
-#ifdef OPENCV
+/*
+* Never show the image but save the png visualization instead
+* -- Henry Zhou
+*/
+/*
+#ifdef 0 //OPENCV
     IplImage *disp = cvCreateImage(cvSize(p.w,p.h), IPL_DEPTH_8U, p.c);
     image copy = copy_image(p);
     constrain_image(copy);
     show_image_cv(copy, name, disp);
     free_image(copy);
     cvReleaseImage(&disp);
-#else
+#else*/
     fprintf(stderr, "Not compiled with OpenCV, saving to %s.png instead\n", name);
     save_image(p, name);
+/*
 #endif
+*/
 }
 
 #ifdef OPENCV
